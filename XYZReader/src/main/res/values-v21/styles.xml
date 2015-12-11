@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!--<style name="Theme.Bacon" parent="android:Theme.Material">-->
+        <!--<item name="android:colorPrimary">@color/orange</item>-->
+        <!--<item name="android:colorPrimaryDark">@color/dark_orange</item>-->
+        <!--<item name="android:colorAccent">@color/accent_blue</item>-->
+    <!--</style>-->
+
+    <!--<style name="Theme.Bacon.Detail">-->
+        <!--<item name="android:statusBarColor">@android:color/transparent</item>-->
+    <!--</style>-->
+
+</resources>
