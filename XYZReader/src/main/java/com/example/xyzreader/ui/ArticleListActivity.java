@@ -1,5 +1,7 @@
 package com.example.xyzreader.ui;
 
+import android.app.Activity;
+import android.app.ActivityOptions;
 import android.app.LoaderManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -7,21 +9,24 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.Loader;
 import android.database.Cursor;
+import android.os.Build;
 import android.os.Bundle;
 import android.support.v4.widget.SwipeRefreshLayout;
-import android.support.v7.app.ActionBarActivity;
+import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.StaggeredGridLayoutManager;
 import android.support.v7.widget.Toolbar;
 import android.text.format.DateUtils;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.bumptech.glide.Glide;
 import com.example.xyzreader.R;
 import com.example.xyzreader.data.ArticleLoader;
-import com.example.xyzreader.data.ItemsContract;
 import com.example.xyzreader.data.UpdaterService;
+import com.orhanobut.logger.Logger;
 
 /**
  * An activity representing a list of Articles. This activity has different presentations for
@@ -30,7 +35,7 @@ import com.example.xyzreader.data.UpdaterService;
  * activity presents a grid of items as cards.
  */
 public class ArticleListActivity
-        extends ActionBarActivity
+        extends AppCompatActivity
         implements LoaderManager.LoaderCallbacks<Cursor> {
 
     private Toolbar            mToolbar;
@@ -38,13 +43,17 @@ public class ArticleListActivity
     private RecyclerView       mRecyclerView;
     private boolean mIsRefreshing = false;
     private BroadcastReceiver mRefreshingReceiver;
+    private Context           mContext;
+    private Bundle mBundle = new Bundle();
+    public  ImageView mImageView;
+    private Activity  mActivity;
 
     @Override
     protected void onCreate (Bundle savedInstanceState) {
         super.onCreate( savedInstanceState );
         setContentView( R.layout.activity_list_coord );
         mToolbar = (Toolbar) findViewById( R.id.toolbar );
-
+        Logger.init();
         mSwipeRefreshLayout = (SwipeRefreshLayout) findViewById( R.id.swipe_refresh_layout );
         mSwipeRefreshLayout.setColorSchemeResources( R.color.accent_blue );
         mRecyclerView = (RecyclerView) findViewById( R.id.recycler_view );
@@ -55,7 +64,6 @@ public class ArticleListActivity
                 refresh();
             }
         } );
-
 
         mRefreshingReceiver = new BroadcastReceiver() {
             @Override
@@ -75,6 +83,7 @@ public class ArticleListActivity
         if (savedInstanceState == null) {
             refresh();
         }
+        mActivity = this;
     }
 
     private void refresh () {
@@ -93,7 +102,6 @@ public class ArticleListActivity
         super.onStop();
         unregisterReceiver( mRefreshingReceiver );
     }
-
 
 
     private void updateRefreshingUI () {
@@ -144,9 +152,23 @@ public class ArticleListActivity
             view.setOnClickListener( new View.OnClickListener() {
                 @Override
                 public void onClick (View view) {
-                    startActivity( new Intent( Intent.ACTION_VIEW,
-                                               ItemsContract.Items.buildItemUri( getItemId(
-                                                       vh.getAdapterPosition() ) ) ) );
+                    Intent intent = new Intent( ArticleListActivity.this,
+                                                ArticleDetailActivity.class );
+                    intent.putExtra( "itemID", getItemId( vh.getAdapterPosition() ) );
+
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                        Logger.d( "Transition enabled" );
+                        Bundle bundle = ActivityOptions
+                                .makeSceneTransitionAnimation( ArticleListActivity.this,
+                                                               vh.thumbnailView,
+                                                               vh.thumbnailView.getTransitionName() )
+                                .toBundle();
+                       startActivity( intent, bundle );
+                    } else {
+                        Logger.d( "No Transition" );
+                        startActivity( intent );
+                    }
+
                 }
             } );
             return vh;
@@ -154,6 +176,7 @@ public class ArticleListActivity
 
         @Override
         public void onBindViewHolder (ViewHolder holder, int position) {
+
             mCursor.moveToPosition( position );
             holder.titleView.setText( mCursor.getString( ArticleLoader.Query.TITLE ) );
             holder.subtitleView.setText( DateUtils.getRelativeTimeSpanString( mCursor.getLong(
@@ -163,11 +186,12 @@ public class ArticleListActivity
                                                                               DateUtils.FORMAT_ABBREV_ALL )
                                                   .toString() + " by " + mCursor.getString(
                     ArticleLoader.Query.AUTHOR ) );
-            holder.thumbnailView.setImageUrl( mCursor.getString( ArticleLoader.Query.THUMB_URL ),
-                                              ImageLoaderHelper.getInstance(
-                                                      ArticleListActivity.this )
-                                                               .getImageLoader() );
-            holder.thumbnailView.setAspectRatio( mCursor.getFloat( ArticleLoader.Query.ASPECT_RATIO ) );
+            String imageUrl = mCursor.getString( ArticleLoader.Query.THUMB_URL );
+
+            Glide.with( holder.thumbnailView.getContext() )
+                 .load( imageUrl )
+                    .placeholder( R.color.photo_placeholder )
+                 .into( holder.thumbnailView );
         }
 
         @Override
@@ -178,13 +202,16 @@ public class ArticleListActivity
 
     public static class ViewHolder
             extends RecyclerView.ViewHolder {
-        public DynamicHeightNetworkImageView thumbnailView;
-        public TextView                      titleView;
-        public TextView                      subtitleView;
+        public ImageView thumbnailView;
+        public TextView  titleView;
+        public TextView  subtitleView;
 
         public ViewHolder (View view) {
             super( view );
-            thumbnailView = (DynamicHeightNetworkImageView) view.findViewById( R.id.thumbnail );
+            thumbnailView = (ImageView) view.findViewById( R.id.thumbnail );
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                thumbnailView.setTransitionName( "imageTransition" );
+            }
             titleView = (TextView) view.findViewById( R.id.article_title );
             subtitleView = (TextView) view.findViewById( R.id.article_subtitle );
         }
