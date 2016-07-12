@@ -1,5 +1,17 @@
 # XYZ-Reader
-Udacity Android Nanodegree - Project 5
+
+This project was completed as part of Udacity's Android Nanodegree, in order to incorporate and showcase Material Design. 
+
+## App Features
+
+## Screenshots
+
+## Libraries Used
+* Image loading - com.github.bumptech.glide:glide:3.6.1
+* Network helper - com.squareup.okhttp:okhttp:2.6.0
+* Pallete/Glide helper - com.github.florent37:glidepalette:1.0.4@aar
+
+## Issues
 
 ## License
 
